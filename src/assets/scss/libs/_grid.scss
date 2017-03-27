@@ -1,0 +1,235 @@
+// ≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡
+// GRID SYSTEM
+// ≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡
+
+@function strip-unit($num) {
+    @return $num / ($num * 0 + 1);
+}
+
+@function to-rem($value, $base: 16px) {
+    // Calculate rem if units for $value is not rem
+    @if (unit($value) != "rem") {
+        $value: strip-unit($value) / strip-unit($base) * 1rem;
+    }
+    // Turn 0rem into 0
+    @if ($value == 0rem) {
+        $value: 0;
+    }
+    @return $value;
+}
+
+// =========================================================================
+// Variables
+// =========================================================================
+
+// The name and values of the media query breakpoints
+$grid-breakpoints: (
+        xs: 0,
+        sm: 480px,
+        md: 768px,
+        lg: 992px,
+        xl: 1200px,
+        xxl: 1440px,
+) !default;
+
+// The max width of a row
+$grid-max-width: to-rem(1200px) !default;
+
+// The default column count of a grid
+$grid-column-count: 12 !default;
+
+/// The amount of space between columns at different screen sizes.
+$grid-gutter: 30px !default;
+
+// Enables use of Flexbox
+$grid-flexbox: false;
+
+$grid-selectors: (
+        row: 'grid-row',
+        column: 'grid-col',
+        push: 'grid-push',
+        pull: 'grid-pull'
+);
+
+// =========================================================================
+// Global
+// =========================================================================
+
+@mixin clearfix {
+    &::after,
+    &::before {
+        content: ' ';
+        display: table;
+        @if $grid-flexbox {
+            flex-basis: 0;
+            order: 1;
+        }
+    }
+    &::after {
+        clear: both;
+    }
+}
+
+@mixin media($breakpoint) {
+    @if map-has-key($grid-breakpoints, $breakpoint) {
+
+        @if map-get($grid-breakpoints, $breakpoint) != 0 {
+
+            $value: ( ( map-get($grid-breakpoints, $breakpoint) / 16px ) * 1em );
+
+            @media (min-width: ( #{$value} )) {
+                @content;
+            }
+        } @else {
+            @content;
+        }
+    }
+
+    @else {
+        @warn "Unfortunately, no value could be retrieved from `#{$breakpoint}`. "
+        + "Please make sure it is defined in `$breakpoints` map.";
+    }
+}
+
+// =========================================================================
+// Rows
+// =========================================================================
+
+// --------------------------------------------------------
+// Mixins
+// --------------------------------------------------------
+
+@mixin grid-row( $behavior: null, $width: $grid-max-width ) {
+
+    max-width: $width;
+
+    @if index($behavior, collapse) != null {
+        margin-left: 0;
+        margin-right: 0;
+    } @else {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    @include clearfix;
+
+}
+
+@mixin grid-row-nested() {
+
+    max-width: none;
+    $margin: to-rem($grid-gutter) / 2 * -1;
+    margin-left: $margin;
+    margin-right: $margin;
+
+}
+// --------------------------------------------------------
+// Selectors
+// --------------------------------------------------------
+
+[#{map-get($grid-selectors, row)}] {
+    @include grid-row;
+
+    & & {
+        @include grid-row-nested;
+    }
+}
+
+[#{map-get($grid-selectors, row)}~=collapse] {
+    @include grid-row(collapse);
+}
+
+[#{map-get($grid-selectors, row)}~=fluid] {
+    @include grid-row(null, 0);
+}
+
+// =========================================================================
+// Columns
+// =========================================================================
+
+// --------------------------------------------------------
+// Mixins
+// --------------------------------------------------------
+
+@mixin grid-make-column( $columns: $grid-column-count, $gutter: $grid-gutter ) {
+    width: percentage($columns / $grid-column-count);
+    float: left;
+    $padding: to-rem($gutter) / 2;
+    padding-left: $padding;
+    padding-right: $padding;
+}
+
+@mixin grid-make-column-row( $gutter: $grid-gutter ) {
+    @include grid-row;
+    @include grid-column($gutter: $gutter);
+
+    &, &:last-child {
+        float: none;
+    }
+}
+
+@mixin grid-make-column-offset($position) {
+    @if type-of($position) == 'number' {
+        $offset: percentage($position / $grid-column-count);
+
+        position: relative;
+        left: $offset;
+    }
+    @else if $position == center {
+        float: none;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    @else {
+        @warn 'Wrong syntax for grid-make-column-offset(). Enter a positive or negative number, or center.';
+    }
+}
+
+// --------------------------------------------------------
+// Selectors
+// --------------------------------------------------------
+
+// Column
+[#{map-get($grid-selectors, column)}] {
+    @include grid-make-column;
+}
+
+// Column Row
+[#{map-get($grid-selectors, column)}][#{map-get($grid-selectors, row)}][#{map-get($grid-selectors, row)}] {
+    float: none;
+
+    [#{map-get($grid-selectors, row)}] & {
+        padding-left: 0;
+        padding-right: 0;
+        margin-left: 0;
+        margin-right: 0;
+    }
+}
+
+// Media Queries
+@each $breakpoint-name, $breakpoint-value in $grid-breakpoints {
+
+    @include media(#{$breakpoint-name}) {
+
+        @for $i from 1 through $grid-column-count {
+
+            // Classes
+            [#{map-get($grid-selectors, column)}~=#{$breakpoint-name}-#{$i}] {
+                width: percentage($i / $grid-column-count);
+            }
+
+            // Source ordering
+            @if $i < $grid-column-count {
+                [#{map-get($grid-selectors, push)}~=#{$breakpoint-name}-#{$i}] {
+                    @include grid-make-column-offset($i);
+                }
+
+                [#{map-get($grid-selectors, pull)}~=#{$breakpoint-name}-#{$i}] {
+                    @include grid-make-column-offset(-$i);
+                }
+            }
+
+        }
+
+    }
+}
