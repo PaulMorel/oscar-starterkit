@@ -8,10 +8,10 @@ var config = {
     projectName: 'Oscar Starterkit',
     browserSync: true,
     basePath: {
-        src: 'src/assets/',
-        dev: 'dev/assets/',
-        url: '',
-        proxy: 'http://192.168.100.100'
+        src:    'src/assets/',
+        assets: 'dev/assets/',
+        dev:    'dev/',
+        proxy:  'http://192.168.100.100'
     }
 };
 
@@ -79,7 +79,7 @@ function css() {
             browsers: ['last 2 versions', 'ie >= 9', 'and_chr >= 4'],
             cascade: false
         }))
-        .pipe( gulp.dest( config.basePath.dev + 'css/' ) )
+        .pipe(gulp.dest(config.basePath.assets + 'css/'))
         .pipe(rename({
             suffix: '.min'
         }))
@@ -87,10 +87,10 @@ function css() {
             beautify: false
         }))
         .pipe(cssnano({
-            autoprefixer: false;
+            autoprefixer: false
         }))
         .pipe(sourcemaps.write('./'))
-        .pipe(gulp.dest(config.basePath.dev + 'css/'));
+        .pipe(gulp.dest(config.basePath.assets + 'css/'));
 }
 
 // --------------------------------------------------------
@@ -109,12 +109,12 @@ function js() {
             errorHandler: onError
         }))
         .pipe(concat('global.js'))
-        .pipe(gulp.dest(config.basePath.dev + 'js/'))
+        .pipe(gulp.dest(config.basePath.assets + 'js/'))
         .pipe(rename({
             suffix: '.min'
         }))
         .pipe(uglify())
-        .pipe(gulp.dest(config.basePath.dev + 'js/'));
+        .pipe(gulp.dest(config.basePath.assets + 'js/'));
 }
 
 //
@@ -128,12 +128,12 @@ function libraries() {
             errorHandler: onError
         }))
         .pipe(concat('libs.js'))
-        .pipe(gulp.dest(config.basePath.dev + 'js/'))
+        .pipe(gulp.dest(config.basePath.assets + 'js/'))
         .pipe(rename({
             suffix: '.min'
         }))
         .pipe(uglify())
-        .pipe(gulp.dest(config.basePath.dev + 'js/'));
+        .pipe(gulp.dest(config.basePath.assets + 'js/'));
 }
 libraries.displayName = 'js:libs';
 
@@ -158,7 +158,7 @@ function img() {
             optimizationLevel: 4,
             multipass: true
         }))
-        .pipe(gulp.dest(config.basePath.dev + 'img/'));
+        .pipe(gulp.dest(config.basePath.assets + 'img/'));
 }
 
 //
@@ -236,16 +236,24 @@ function watch() {
 
     if (config.browserSync === true ) {
         browserSync.init({
-            files: [config.basePath.dev],
-            injectChanges: true,
-            proxy: config.basePath.proxy
+            files:          [
+                '!' + config.basePath.dev + 'site/accounts/',
+                config.basePath.dev + 'site/**/*.php',
+                config.basePath.dev + 'content/**/*.txt',
+                config.basePath.assets + '**/*'
+            ],
+            injectChanges:  true,
+            proxy:          config.basePath.proxy,
+            snippetOptions: {
+                ignorePaths: [ '/panel', '/panel/**' ]
+            }
         });
     } else {
         console.log('Browser Sync Disabled');
     }
 
     // Watch .scss files
-    gulp.watch(config.basePath.src + 'scss/{,*/}*.scss', { usePolling: true }, css );
+    gulp.watch(config.basePath.src + 'scss/**/*.scss', { usePolling: true }, css);
 
     // Watch js files
     gulp.watch(config.basePath.src + 'js/*.js', { usePolling: true }, js );
