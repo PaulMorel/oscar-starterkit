@@ -149,15 +149,24 @@ libraries.displayName = 'js:libs';
 function img() {
     return gulp.src([
             config.basePath.src + 'img/{,*/}*.{png,jpg,gif,svg}',
-            '!' + config.basePath.src + 'img/sprites/*', // Negated Folder
+        '!' + config.basePath.src + 'img/sprites/*' // Negated Folder
         ])
         .pipe(plumber({
             errorHandler: onError
         }))
-        .pipe(imagemin({
-            optimizationLevel: 4,
-            multipass: true
-        }))
+        .pipe(imagemin([
+            imagemin.svgo({
+                multipass: true,
+                plugins:   [ {
+                    cleanupIDs: false,
+                    //removeUselessDefs: false,
+                    removeDesc: false
+                } ]
+            }),
+            imagemin.optipng({
+                optimizationLevel: 4
+            })
+        ]))
         .pipe(gulp.dest(config.basePath.assets + 'img/'));
 }
 
@@ -182,20 +191,8 @@ function sprite() {
                     attributes: true
                 },
                 transform: [{
-                    svgo: {
-                        plugins : [
-                            {transformsWithOnePath: {
-                                floatPrecision: 0,
-                            }},
-                            {collapseGroups: true},
-                            {sortAttrs: true},
-                            {cleanupIDs: true},
-                            {removeTitle: false},
-                            {convertPathData: true},
-                            {cleanupNumericValues: {
-                                floatPrecision: 0,
-                            }},
-                        ]
+                    custom: function (shape, sprite, callback) {
+                        callback(null);
                     }
                 }]
             },
